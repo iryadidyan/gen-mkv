@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Temuan Validasi Asesmen (FR.VA - MKVA) - Standar BNSP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            50: '#f0f4f8',
+                            100: '#d9e2ec',
+                            200: '#bcccdc',
+                            300: '#9fb3c8',
+                            400: '#829ab1',
+                            500: '#627d98',
+                            600: '#486581',
+                            700: '#334e68',
+                            800: '#243b53',
+                            900: '#102a43',
+                            950: '#0a1c2e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Print styling untuk dokumen resmi FR.VA BNSP */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none !important;
+                border: none !important;
+                background: white !important;
+                color: black !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            table.frva-table {
+                border-collapse: collapse !important;
+                width: 100% !important;
+                font-size: 10pt !important;
+            }
+            table.frva-table th, table.frva-table td {
+                border: 1px solid #000 !important;
+                padding: 6px 8px !important;
+                color: #000 !important;
+            }
+            table.frva-table th {
+                background-color: #e2e8f0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 15mm;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 no-print"></div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 transform transition-all">
+            <div class="flex items-center gap-3 text-amber-600 mb-3">
+                <div class="p-2.5 bg-amber-100 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 id="modal-title" class="text-lg font-bold text-slate-900">Konfirmasi Tindakan</h3>
+            </div>
+            <p id="modal-message" class="text-sm text-slate-600 mb-6 leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+            <div class="flex justify-end gap-3">
+                <button id="modal-cancel" class="px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Batal</button>
+                <button id="modal-confirm" class="px-4 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-sm transition">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="bg-navy-900 text-white shadow-lg border-b border-navy-800 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="bg-amber-500 text-navy-950 p-2.5 rounded-xl shadow-inner flex-shrink-0">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-navy-800 text-amber-400 border border-navy-700 rounded-md">Standar BNSP</span>
+                            <span class="px-2 py-0.5 text-[11px] font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 rounded-md">FR.VA • MKVA</span>
+                        </div>
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white mt-0.5">Generator Temuan Validasi Asesmen</h1>
+                        <p class="text-xs text-navy-300 hidden sm:block">Penyusunan Laporan Ketidaksesuaian (PLOR) & Rekomendasi Perbaikan Perangkat/Proses Asesmen LSP</p>
+                    </div>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button onclick="openPreviewTab()" class="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-medium bg-navy-800 hover:bg-navy-700 text-white border border-navy-700 rounded-xl transition">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Pratinjau FR.VA (<span id="header-badge-count">0</span>)</span>
+                    </button>
+                    <button onclick="confirmResetAll()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-medium bg-rose-950/60 hover:bg-rose-900 text-rose-200 border border-rose-800/60 rounded-xl transition" title="Hapus semua data dan mulai baru">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <div class="bg-white border-b border-slate-200 shadow-sm no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex space-x-2 sm:space-x-6 overflow-x-auto py-1" aria-label="Tabs">
+                <button id="tab-btn-step1" onclick="switchTab('step1')" class="tab-btn whitespace-nowrap py-3.5 px-3 border-b-2 font-semibold text-sm flex items-center gap-2 border-navy-800 text-navy-900 transition">
+                    <span class="w-6 h-6 rounded-full bg-navy-800 text-white text-xs flex items-center justify-center font-bold">1</span>
+                    <span>Identitas & Konteks FR.VA</span>
+                </button>
+                <button id="tab-btn-step2" onclick="switchTab('step2')" class="tab-btn whitespace-nowrap py-3.5 px-3 border-b-2 font-medium text-sm flex items-center gap-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition">
+                    <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs flex items-center justify-center font-bold">2</span>
+                    <span>Generator Temuan PLOR</span>
+                </button>
+                <button id="tab-btn-step3" onclick="switchTab('step3')" class="tab-btn whitespace-nowrap py-3.5 px-3 border-b-2 font-medium text-sm flex items-center gap-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition">
+                    <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs flex items-center justify-center font-bold">3</span>
+                    <span>Dokumen FR.VA Siap Cetak/Salin</span>
+                    <span id="tab-badge-count" class="ml-1 px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded-full">0</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+        <!-- ===================================================================== -->
+        <!-- TAB 1: IDENTITAS & KONTEKS FR.VA (HEADER & BAGIAN 1)                  -->
+        <!-- ===================================================================== -->
+        <section id="view-step1" class="space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-navy-50/70 border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-navy-900">Langkah 1: Identitas Pelaksanaan, Skema & Konteks Validasi</h2>
+                        <p class="text-xs sm:text-sm text-slate-600">Data ini akan otomatis mengisi kop formulir FR.VA pada bagian pratinjau laporan.</p>
+                    </div>
+                    <button onclick="fillSampleHeader()" class="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-navy-700 bg-white hover:bg-navy-100 border border-navy-200 rounded-xl shadow-xs transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Isi Contoh Data LSP
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Informasi LSP & Skema -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Nama Lembaga Sertifikasi Profesi (LSP)</label>
+                            <input type="text" id="meta-lsp" placeholder="Contoh: LSP Teknologi Digital Indonesia" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" oninput="saveMeta()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Judul Skema Sertifikasi</label>
+                            <input type="text" id="meta-skema-judul" placeholder="Contoh: Okupasi Pemrogram Junior (Junior Coder)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" oninput="saveMeta()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Nomor Skema Sertifikasi</label>
+                            <input type="text" id="meta-skema-nomor" placeholder="Contoh: SKM/0317/00010/2/2023/12" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" oninput="saveMeta()">
+                        </div>
+                    </div>
+
+                    <!-- Waktu, Tempat & Periode Validasi -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2 border-t border-slate-100">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Hari / Tanggal Validasi</label>
+                            <input type="date" id="meta-tanggal" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" oninput="saveMeta()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Tempat Pelaksanaan</label>
+                            <input type="text" id="meta-tempat" placeholder="Contoh: Ruang Rapat Mutu LSP / Zoom Meeting" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" oninput="saveMeta()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Periode Validasi (FR.VA)</label>
+                            <select id="meta-periode" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" onchange="saveMeta()">
+                                <option value="Sebelum Asesmen">Sebelum Asesmen (Validasi Perangkat/MUK)</option>
+                                <option value="Pada Saat Asesmen">Pada Saat Asesmen (Observasi Proses)</option>
+                                <option value="Setelah Asesmen">Setelah Asesmen (Validasi Proses & Hasil)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Bagian 1 FR.VA: Tujuan, Konteks, Pendekatan -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2 border-t border-slate-100">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Tujuan & Fokus Validasi</label>
+                            <select id="meta-tujuan" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" onchange="saveMeta()">
+                                <option value="Bagian dari proses penjaminan mutu organisasi">Bagian dari proses penjaminan mutu organisasi</option>
+                                <option value="Mengevaluasi kualitas perangkat asesmen (MUK)">Mengevaluasi kualitas perangkat asesmen (MUK)</option>
+                                <option value="Memenuhi persyaratan BNSP (Lisensi/Relisensi/Witness)">Memenuhi persyaratan BNSP (Lisensi/Relisensi)</option>
+                                <option value="Mengantisipasi risiko ketidaksesuaian asesmen">Mengantisipasi risiko ketidaksesuaian asesmen</option>
+                                <option value="Mengevaluasi konsistensi keputusan asesmen">Mengevaluasi konsistensi keputusan asesmen</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Konteks Validasi</label>
+                            <select id="meta-konteks" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" onchange="saveMeta()">
+                                <option value="Internal Organisasi (LSP)">Internal Organisasi (LSP)</option>
+                                <option value="Eksternal Organisasi (Audit / Witness BNSP)">Eksternal Organisasi (Audit / Witness BNSP)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Pendekatan Validasi</label>
+                            <select id="meta-pendekatan" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" onchange="saveMeta()">
+                                <option value="Mengkaji perangkat asesmen bersama kolega asesor">Mengkaji perangkat asesmen bersama kolega asesor</option>
+                                <option value="Panel asesmen (Assessment Panel)">Panel asesmen (Assessment Panel)</option>
+                                <option value="Pertemuan moderasi (Moderation Meeting)">Pertemuan moderasi (Moderation Meeting)</option>
+                                <option value="Pengujian lapangan / uji coba perangkat asesmen">Pengujian lapangan / uji coba perangkat asesmen</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tim Validasi -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Nama Lead Validator (Ketua Tim)</label>
+                            <input type="text" id="meta-lead" placeholder="Contoh: Ir. Budi Santoso, M.Kom (MET.000.001234 2021)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" oninput="saveMeta()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Anggota Tim Validasi (Pisahkan dengan koma / baris baru)</label>
+                            <input type="text" id="meta-anggota" placeholder="Contoh: Siti Aminah, S.T. (Asesor), Ahmad Fauzi (Teknis)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none transition" oninput="saveMeta()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
+                    <button onclick="switchTab('step2')" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-navy-800 hover:bg-navy-900 rounded-xl shadow-sm transition">
+                        <span>Lanjut ke Generator Temuan PLOR</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 2: GENERATOR TEMUAN PLOR & REKOMENDASI PERBAIKAN                  -->
+        <!-- ===================================================================== -->
+        <section id="view-step2" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                <!-- KOLOM KIRI (7 cols): Form Input PLOR -->
+                <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-navy-900 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 id="form-mode-title" class="text-base sm:text-lg font-bold">Penyusun Temuan Validasi (Kaidah PLOR)</h2>
+                                <span id="editing-badge" class="hidden px-2 py-0.5 text-[11px] font-bold bg-amber-400 text-navy-950 rounded-md">Mode Edit</span>
+                            </div>
+                            <p class="text-xs text-navy-200 mt-0.5">Susun kalimat temuan yang objektif, spesifik, dan dapat ditindaklanjuti.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-5">
+                        <!-- Preset Kasus Umum LSP -->
+                        <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl p-4">
+                            <label class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-900 mb-2">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                                Template / Preset Kasus Umum LSP (Klik untuk memuat contoh)
+                            </label>
+                            <select id="preset-selector" onchange="applyPreset(this.value)" class="w-full rounded-xl border border-amber-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 outline-none transition">
+                                <option value="">-- Pilih Contoh Kasus Validasi untuk Memulai Cepat --</option>
+                                <option value="ia05_valid">1. [VRFF - Valid] FR.IA.05 Soal PG kurang pengecoh & tanpa kode unit</option>
+                                <option value="ia01_reliabel">2. [VRFF - Reliabel] FR.IA.01 Ceklis Observasi belum memuat KUK spesifik</option>
+                                <option value="ia02_fleksibel">3. [VRFF - Fleksibel] FR.IA.02 Tugas Praktik Demonstrasi kurang fleksibel</option>
+                                <option value="mapa02_fair">4. [VRFF - Fair] FR.MAPA.02 Pemilihan instrumen tidak sesuai karakteristik asesi</option>
+                                <option value="ia08_terkini">5. [VATM - Terkini] FR.IA.08 Ceklis Verifikasi Portofolio tanpa batas waktu bukti</option>
+                                <option value="ia09_asli">6. [VATM - Asli] FR.IA.09 Wawancara konfirmasi keaslian bukti belum terstruktur</option>
+                                <option value="apl02_standar">7. [Standar SKKNI] FR.APL.02 Asesmen Mandiri belum mengacu SKKNI terbaru</option>
+                            </select>
+                        </div>
+
+                        <!-- KOMPONEN P: PROBLEM -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center gap-2 text-sm font-bold text-navy-900">
+                                    <span class="w-6 h-6 rounded-lg bg-rose-600 text-white text-xs font-extrabold flex items-center justify-center shadow-xs">P</span>
+                                    Problem (Masalah / Prinsip & Aturan yang Dilanggar)
+                                </span>
+                                <span class="text-[11px] font-medium text-slate-500">Langkah 1 dari 4</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori Prinsip / Aturan</label>
+                                    <select id="plor-p-category" onchange="onPCategoryChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-navy-600 outline-none">
+                                        <optgroup label="Prinsip Asesmen (VRFF)">
+                                            <option value="VRFF - Valid">Prinsip Valid (Validity)</option>
+                                            <option value="VRFF - Reliabel">Prinsip Reliabel (Reliability)</option>
+                                            <option value="VRFF - Fleksibel">Prinsip Fleksibel (Flexibility)</option>
+                                            <option value="VRFF - Fair">Prinsip Fair / Adil (Fairness)</option>
+                                        </optgroup>
+                                        <optgroup label="Aturan Bukti (VATM)">
+                                            <option value="VATM - Valid">Aturan Bukti: Valid</option>
+                                            <option value="VATM - Asli">Aturan Bukti: Asli (Authentic)</option>
+                                            <option value="VATM - Terkini">Aturan Bukti: Terkini (Current)</option>
+                                            <option value="VATM - Memadai">Aturan Bukti: Memadai (Sufficient)</option>
+                                        </optgroup>
+                                        <optgroup label="Kesesuaian Standar & Administrasi">
+                                            <option value="Kesesuaian SKKNI / Skema">Kesesuaian Standar (SKKNI / KUK / Skema)</option>
+                                            <option value="Kelengkapan Administrasi MUK">Kelengkapan & Format Dokumen MUK</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Template Kalimat Pembuka (P)</label>
+                                    <select id="plor-p-template" onchange="applyPTemplate(this.value)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-navy-600 outline-none">
+                                        <!-- Diisi dinamis oleh JS -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Kalimat Problem (Dapat diedit langsung)</label>
+                                <input type="text" id="plor-p-text" oninput="updateLivePreview()" placeholder="Contoh: Validitas prinsip asesmen pada perangkat uji belum dapat dipastikan," class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none">
+                            </div>
+                        </div>
+
+                        <!-- KOMPONEN L: LOCATION -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center gap-2 text-sm font-bold text-navy-900">
+                                    <span class="w-6 h-6 rounded-lg bg-amber-600 text-white text-xs font-extrabold flex items-center justify-center shadow-xs">L</span>
+                                    Location (Lokasi Formulir & Bagian Spesifik)
+                                </span>
+                                <span class="text-[11px] font-medium text-slate-500">Langkah 2 dari 4</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kode & Nama Formulir BNSP</label>
+                                    <select id="plor-l-form" onchange="onLFormChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-navy-600 outline-none">
+                                        <optgroup label="Perencanaan (MAPA)">
+                                            <option value="FR.MAPA.01 (Merencanakan Aktivitas dan Proses Asesmen)">FR.MAPA.01 (Merencanakan Aktivitas & Proses)</option>
+                                            <option value="FR.MAPA.02 (Peta Instrumen Asesmen Hasil Pendekatan Asesmen)">FR.MAPA.02 (Peta Instrumen Asesmen)</option>
+                                        </optgroup>
+                                        <optgroup label="Permohonan & Asesmen Mandiri (APL)">
+                                            <option value="FR.APL.01 (Permohonan Sertifikasi Kompetensi)">FR.APL.01 (Permohonan Sertifikasi)</option>
+                                            <option value="FR.APL.02 (Asesmen Mandiri)">FR.APL.02 (Asesmen Mandiri)</option>
+                                        </optgroup>
+                                        <optgroup label="Instrumen Asesmen (IA)">
+                                            <option value="FR.IA.01 (Ceklis Observasi Aktivitas di Tempat Kerja)">FR.IA.01 (Ceklis Observasi Aktivitas)</option>
+                                            <option value="FR.IA.02 (Tugas Praktik Demonstrasi)">FR.IA.02 (Tugas Praktik Demonstrasi)</option>
+                                            <option value="FR.IA.03 (Pertanyaan untuk Mendukung Observasi)">FR.IA.03 (Pertanyaan Mendukung Observasi)</option>
+                                            <option value="FR.IA.04 (Penjelasan Singkat Proyek Terkait Pekerjaan)">FR.IA.04 (Penjelasan Singkat Proyek)</option>
+                                            <option value="FR.IA.05 (Pertanyaan Tertulis Pilihan Ganda)" selected>FR.IA.05 (Pertanyaan Tertulis Pilihan Ganda)</option>
+                                            <option value="FR.IA.06 (Pertanyaan Tertulis Esai)">FR.IA.06 (Pertanyaan Tertulis Esai)</option>
+                                            <option value="FR.IA.07 (Pertanyaan Lisan)">FR.IA.07 (Pertanyaan Lisan)</option>
+                                            <option value="FR.IA.08 (Ceklis Verifikasi Portofolio)">FR.IA.08 (Ceklis Verifikasi Portofolio)</option>
+                                            <option value="FR.IA.09 (Pertanyaan Wawancara)">FR.IA.09 (Pertanyaan Wawancara)</option>
+                                            <option value="FR.IA.10 (Klarifikasi Bukti Pihak Ketiga)">FR.IA.10 (Klarifikasi Bukti Pihak Ketiga)</option>
+                                            <option value="FR.IA.11 (Ceklis Meninjau Instrumen Asesmen)">FR.IA.11 (Ceklis Meninjau Instrumen)</option>
+                                        </optgroup>
+                                        <optgroup label="Keputusan & Umpan Balik (AK)">
+                                            <option value="FR.AK.01 (Persetujuan Asesmen dan Kerahasiaan)">FR.AK.01 (Persetujuan Asesmen)</option>
+                                            <option value="FR.AK.02 (Rekaman Asesmen Kompetensi)">FR.AK.02 (Rekaman Asesmen Kompetensi)</option>
+                                            <option value="FR.AK.03 (Umpan Balik dan Catatan Asesmen)">FR.AK.03 (Umpan Balik Asesmen)</option>
+                                            <option value="FR.AK.04 (Banding Asesmen)">FR.AK.04 (Banding Asesmen)</option>
+                                            <option value="FR.AK.05 (Laporan Asesmen)">FR.AK.05 (Laporan Asesmen)</option>
+                                            <option value="FR.AK.06 (Meninjau Proses Asesmen)">FR.AK.06 (Meninjau Proses Asesmen)</option>
+                                            <option value="FR.AK.07 (Ceklis Penyesuaian yang Wajar dan Beralasan)">FR.AK.07 (Penyesuaian yang Wajar)</option>
+                                        </optgroup>
+                                        <option value="CUSTOM">-- Formulir / Dokumen Lainnya (Tulis Manual) --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Bagian Spesifik (No. Soal / Unit / KUK)</label>
+                                    <input type="text" id="plor-l-detail" oninput="updateLivePreview()" placeholder="Contoh: nomor soal 4 dan 5 / Unit 1 KUK 1.2" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none">
+                                </div>
+                            </div>
+
+                            <div id="plor-l-custom-wrap" class="hidden">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Dokumen / Formulir Custom</label>
+                                <input type="text" id="plor-l-custom" oninput="updateLivePreview()" placeholder="Contoh: Skema Sertifikasi Okupasi / SOP Pelaksanaan Uji" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-navy-600 outline-none">
+                            </div>
+                        </div>
+
+                        <!-- KOMPONEN O: OBJECTIVE -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center gap-2 text-sm font-bold text-navy-900">
+                                    <span class="w-6 h-6 rounded-lg bg-sky-600 text-white text-xs font-extrabold flex items-center justify-center shadow-xs">O</span>
+                                    Objective (Bukti Nyata / Fakta di Dokumen)
+                                </span>
+                                <span class="text-[11px] font-medium text-slate-500">Langkah 3 dari 4</span>
+                            </div>
+
+                            <!-- Quick chips frasa objektif -->
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" onclick="appendObjectivePhrase('opsi jawaban tidak mencantumkan pengecoh yang logis dan homogen')" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-100/80 hover:bg-sky-200/80 text-sky-900 font-medium transition">+ Pengecoh tidak logis</button>
+                                <button type="button" onclick="appendObjectivePhrase('belum mencantumkan kode dan judul unit kompetensi pada header tabel')" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-100/80 hover:bg-sky-200/80 text-sky-900 font-medium transition">+ Tanpa kode unit</button>
+                                <button type="button" onclick="appendObjectivePhrase('belum tersedia kriteria unjuk kerja (KUK) yang terukur sebagai acuan observasi')" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-100/80 hover:bg-sky-200/80 text-sky-900 font-medium transition">+ KUK tidak terukur</button>
+                                <button type="button" onclick="appendObjectivePhrase('belum mencantumkan batasan waktu kemutakhiran bukti portofolio (misal maksimal 2 tahun terakhir)')" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-100/80 hover:bg-sky-200/80 text-sky-900 font-medium transition">+ Batas waktu bukti</button>
+                                <button type="button" onclick="appendObjectivePhrase('kunci jawaban belum dilengkapi dengan pemetaan KUK yang diujikan')" class="text-[11px] px-2.5 py-1 rounded-lg bg-sky-100/80 hover:bg-sky-200/80 text-sky-900 font-medium transition">+ Kunci tanpa KUK</button>
+                            </div>
+
+                            <div>
+                                <textarea id="plor-o-text" rows="2" oninput="updateLivePreview()" placeholder="Tuliskan fakta objektif tanpa opini. Contoh: opsi jawaban tidak mencantumkan pengecoh yang logis dan tidak memuat kode unit kompetensi." class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- KOMPONEN R: REFERENCE -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="inline-flex items-center gap-2 text-sm font-bold text-navy-900">
+                                    <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white text-xs font-extrabold flex items-center justify-center shadow-xs">R</span>
+                                    Reference (Acuan Standar yang Dilanggar)
+                                </span>
+                                <span class="text-[11px] font-medium text-slate-500">Langkah 4 dari 4</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Acuan Standar Utama</label>
+                                    <select id="plor-r-select" onchange="onRSelectChange()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-navy-600 outline-none">
+                                        <option value="Pedoman Penyusunan Materi Uji Kompetensi (MUK) BNSP dan Skema Sertifikasi">Pedoman Penyusunan MUK BNSP & Skema Sertifikasi</option>
+                                        <option value="SKKNI terkait pada Kriteria Unjuk Kerja (KUK) dan Batasan Variabel">SKKNI terkait (KUK & Batasan Variabel)</option>
+                                        <option value="Peraturan BNSP Nomor 2/BNSP/VIII/2017 (PBNSP 201 / 210) tentang Pedoman Penilaian Kesesuaian">Peraturan BNSP (PBNSP 201 / 210)</option>
+                                        <option value="SOP Pelaksanaan Asesmen dan Validasi MUK LSP">SOP Pelaksanaan Asesmen & Validasi MUK LSP</option>
+                                        <option value="Skema Sertifikasi dan Peta Kelompok Pekerjaan yang telah ditetapkan LSP">Skema Sertifikasi & Peta Kelompok Pekerjaan</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor SKKNI / Pasal / Keterangan Tambahan (Opsional)</label>
+                                    <input type="text" id="plor-r-detail" oninput="updateLivePreview()" placeholder="Contoh: Kepmenaker No. 282 Tahun 2016" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-navy-600 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REKOMENDASI PERBAIKAN & TINDAK LANJUT -->
+                        <div class="p-4 rounded-xl border-2 border-navy-200 bg-navy-50/40 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span class="inline-flex items-center gap-2 text-sm font-bold text-navy-900">
+                                    <svg class="w-5 h-5 text-navy-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Rekomendasi Perbaikan (Kalimat Perintah Aktif)
+                                </span>
+                                <button type="button" onclick="autoGenerateRecommendation()" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-navy-800 hover:bg-navy-900 rounded-xl shadow-xs transition">
+                                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    Auto-Saran Rekomendasi
+                                </button>
+                            </div>
+
+                            <div>
+                                <textarea id="rec-text" rows="2" oninput="updateLivePreview()" placeholder="Gunakan kata kerja perintah aktif (Lengkapi..., Revisi..., Sesuaikan..., Tambahkan...)." class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-navy-600 focus:ring-2 focus:ring-navy-600/20 outline-none"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Penanggung Jawab Tindak Lanjut</label>
+                                    <select id="rec-pic" onchange="updateLivePreview()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-navy-600 outline-none">
+                                        <option value="Tim Penyusun MUK">Tim Penyusun MUK</option>
+                                        <option value="Manajer Sertifikasi LSP">Manajer Sertifikasi LSP</option>
+                                        <option value="Bagian Manajemen Mutu LSP">Bagian Manajemen Mutu LSP</option>
+                                        <option value="Lead Asesor / Komite Skema">Lead Asesor / Komite Skema</option>
+                                        <option value="Asesor Kompetensi Terkait">Asesor Kompetensi Terkait</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tenggat Waktu Penyelesaian</label>
+                                    <select id="rec-deadline" onchange="updateLivePreview()" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-navy-600 outline-none">
+                                        <option value="Maksimal 3 hari kerja setelah sesi validasi">Maksimal 3 hari kerja setelah sesi validasi</option>
+                                        <option value="Maksimal 7 hari kerja setelah sesi validasi" selected>Maksimal 7 hari kerja setelah sesi validasi</option>
+                                        <option value="Maksimal 14 hari kerja setelah sesi validasi">Maksimal 14 hari kerja setelah sesi validasi</option>
+                                        <option value="Sebelum pelaksanaan uji kompetensi dimulai">Sebelum pelaksanaan uji kompetensi dimulai</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Submit Buttons -->
+                        <div class="flex flex-wrap items-center justify-end gap-3 pt-2">
+                            <button type="button" id="btn-cancel-edit" onclick="cancelEdit()" class="hidden px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                                Batal Edit
+                            </button>
+                            <button type="button" onclick="clearCurrentForm()" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl transition">
+                                Bersihkan Form
+                            </button>
+                            <button type="button" id="btn-save-finding" onclick="saveFinding()" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                <span id="btn-save-text">Tambahkan ke Daftar Temuan FR.VA</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOLOM KANAN (5 cols): Live Preview Kalimat PLOR & Daftar Temuan Sesi Ini -->
+                <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+
+                    <!-- Card Live Preview PLOR -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-slate-800 text-white px-5 py-3.5 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <h3 class="text-sm font-bold tracking-wide">Pratinjau Kalimat Audit PLOR</h3>
+                            </div>
+                            <button type="button" onclick="copyLivePlor()" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                Salin Teks
+                            </button>
+                        </div>
+
+                        <div class="p-5 space-y-4">
+                            <!-- Badge Kategori -->
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span id="preview-badge-cat" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-navy-100 text-navy-800">VRFF - Valid</span>
+                                <span id="preview-badge-form" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-100 text-amber-900">FR.IA.05</span>
+                            </div>
+
+                            <!-- Paragraf PLOR dengan Color Coding -->
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm leading-relaxed text-slate-800">
+                                <p id="live-plor-paragraph">
+                                    <span class="text-slate-400 italic">Lengkapi kolom P, L, O, dan R di sebelah kiri untuk melihat hasil penggabungan kalimat temuan validasi secara otomatis...</span>
+                                </p>
+                            </div>
+
+                            <!-- Legenda PLOR -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-rose-50 text-rose-800 font-medium">
+                                    <span class="w-2 h-2 rounded-full bg-rose-600"></span> P: Problem
+                                </div>
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-50 text-amber-800 font-medium">
+                                    <span class="w-2 h-2 rounded-full bg-amber-600"></span> L: Location
+                                </div>
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-sky-50 text-sky-800 font-medium">
+                                    <span class="w-2 h-2 rounded-full bg-sky-600"></span> O: Objective
+                                </div>
+                                <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-800 font-medium">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span> R: Reference
+                                </div>
+                            </div>
+
+                            <!-- Pratinjau Rekomendasi -->
+                            <div class="pt-3 border-t border-slate-100">
+                                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Rekomendasi Perbaikan:</span>
+                                <div id="live-rec-paragraph" class="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200/80 text-sm text-slate-800">
+                                    <span class="text-slate-400 italic">Belum ada rekomendasi perbaikan...</span>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                                    <span>PIC: <strong id="live-rec-pic" class="text-slate-700">Tim Penyusun MUK</strong></span>
+                                    <span>Target: <strong id="live-rec-deadline" class="text-slate-700">Maksimal 7 hari kerja</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Daftar Temuan Tersimpan -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-navy-50 px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-navy-900">Daftar Temuan Sesi Ini (<span id="side-list-count">0</span>)</h3>
+                            <button onclick="switchTab('step3')" class="text-xs font-bold text-navy-700 hover:text-navy-900 underline">
+                                Lihat Tabel FR.VA &rarr;
+                            </button>
+                        </div>
+                        <div id="side-findings-list" class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                            <div class="p-6 text-center text-sm text-slate-400">
+                                Belum ada temuan yang ditambahkan ke daftar.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 3: DOKUMEN FR.VA SIAP CETAK / SALIN (BAGIAN 3 & PENGESAHAN)       -->
+        <!-- ===================================================================== -->
+        <section id="view-step3" class="hidden space-y-6">
+            <!-- Action Bar Dokumen -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-navy-900">Pratinjau Formulir FR.VA (Laporan Hasil Validasi)</h2>
+                    <p class="text-xs sm:text-sm text-slate-600">Salin tabel ke Microsoft Word/Excel atau cetak langsung sebagai dokumen PDF resmi.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button onclick="switchTab('step2')" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-navy-800 bg-navy-50 hover:bg-navy-100 border border-navy-200 rounded-xl transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Temuan
+                    </button>
+                    <button onclick="copyAllTableText()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-xs transition">
+                        <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        Salin Semua (Teks/Word)
+                    </button>
+                    <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold text-white bg-navy-800 hover:bg-navy-900 rounded-xl shadow-sm transition">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Cetak / Simpan PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- KERTAS DOKUMEN FR.VA (Area Cetak) -->
+            <div id="print-area" class="bg-white rounded-2xl shadow-md border border-slate-300 p-6 sm:p-10 max-w-5xl mx-auto text-slate-900">
+                <!-- Kop Formulir FR.VA -->
+                <div class="border-b-2 border-slate-900 pb-4 mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-slate-600" id="doc-lsp-name">LEMBAGA SERTIFIKASI PROFESI (LSP)</p>
+                        <h1 class="text-xl font-extrabold text-slate-900 mt-0.5">FR.VA. MEMBERIKAN KONTRIBUSI DALAM VALIDASI ASESMEN</h1>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <span class="inline-block px-3 py-1 border border-slate-900 text-xs font-bold uppercase">Formulir Standar BNSP</span>
+                    </div>
+                </div>
+
+                <!-- Tabel Identitas & Bagian 1 -->
+                <table class="frva-table w-full border-collapse border border-slate-800 text-xs sm:text-sm mb-6">
+                    <tbody>
+                        <tr>
+                            <td class="border border-slate-800 bg-slate-100 font-bold p-2.5 w-1/3" rowspan="2">Skema Sertifikasi<br><span class="font-normal text-xs">(KKNI / Okupasi / Klaster)</span></td>
+                            <td class="border border-slate-800 font-semibold p-2 w-28">Judul</td>
+                            <td class="border border-slate-800 p-2 font-bold" id="doc-skema-judul">-</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-800 font-semibold p-2">Nomor</td>
+                            <td class="border border-slate-800 p-2 font-mono text-xs" id="doc-skema-nomor">-</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-800 bg-slate-100 font-bold p-2.5">Periode Validasi</td>
+                            <td class="border border-slate-800 p-2.5" colspan="2" id="doc-periode">
+                                [ &checkmark; ] Sebelum Asesmen &nbsp;&nbsp;&nbsp; [ &nbsp; ] Pada Saat Asesmen &nbsp;&nbsp;&nbsp; [ &nbsp; ] Setelah Asesmen
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-800 bg-slate-100 font-bold p-2.5">Hari / Tanggal & Tempat</td>
+                            <td class="border border-slate-800 p-2.5" colspan="2">
+                                <span id="doc-tanggal">-</span> &bull; Tempat: <span id="doc-tempat">-</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-800 bg-slate-100 font-bold p-2.5">Tujuan & Fokus Validasi</td>
+                            <td class="border border-slate-800 p-2.5" colspan="2" id="doc-tujuan">-</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-slate-800 bg-slate-100 font-bold p-2.5">Konteks & Pendekatan</td>
+                            <td class="border border-slate-800 p-2.5" colspan="2">
+                                <strong>Konteks:</strong> <span id="doc-konteks">-</span> | <strong>Pendekatan:</strong> <span id="doc-pendekatan">-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Bagian 3: Temuan dan Rekomendasi -->
+                <div class="mb-3">
+                    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-900">Bagian 3: Temuan Validasi (Kaidah PLOR) dan Rekomendasi Perbaikan</h3>
+                    <p class="text-xs text-slate-600">Ringkasan ketidaksesuaian terhadap prinsip asesmen (VRFF), aturan bukti (VATM), dan standar kompetensi beserta rencana tindak lanjutnya.</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="frva-table w-full border-collapse border border-slate-800 text-xs sm:text-sm mb-8">
+                        <thead>
+                            <tr class="bg-slate-200 text-slate-900">
+                                <th class="border border-slate-800 p-2.5 text-center w-12">No.</th>
+                                <th class="border border-slate-800 p-2.5 text-left w-28">Aspek / Acuan</th>
+                                <th class="border border-slate-800 p-2.5 text-left">Temuan Validasi (Problem - Location - Objective - Reference)</th>
+                                <th class="border border-slate-800 p-2.5 text-left">Rekomendasi Perbaikan</th>
+                                <th class="border border-slate-800 p-2.5 text-left w-44">Penanggung Jawab & Tenggat Waktu</th>
+                                <th class="border border-slate-800 p-2.5 text-center w-20 no-print">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doc-findings-tbody">
+                            <tr>
+                                <td colspan="6" class="border border-slate-800 p-6 text-center text-slate-500 italic">
+                                    Belum ada temuan validasi yang dicatat. Silakan tambahkan temuan pada Tab "Generator Temuan PLOR".
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Bagian Pengesahan Tim Validasi -->
+                <div class="mt-8 pt-2 break-inside-avoid">
+                    <h3 class="text-xs font-bold uppercase tracking-wide text-slate-900 mb-3">Pengesahan Tim Validasi Asesmen</h3>
+                    <table class="frva-table w-full border-collapse border border-slate-800 text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="border border-slate-800 p-2 text-center w-12">No.</th>
+                                <th class="border border-slate-800 p-2 text-left">Nama Tim Validasi</th>
+                                <th class="border border-slate-800 p-2 text-left w-40">Peran</th>
+                                <th class="border border-slate-800 p-2 text-center w-48">Tanda Tangan & Tanggal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doc-validators-tbody">
+                            <tr>
+                                <td class="border border-slate-800 p-3 text-center">1</td>
+                                <td class="border border-slate-800 p-3 font-semibold" id="doc-lead-name">-</td>
+                                <td class="border border-slate-800 p-3">Lead Validator / Ketua Tim</td>
+                                <td class="border border-slate-800 p-3 h-14"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+            <p>Generator Temuan Validasi Asesmen (FR.VA - MKVA) &bull; Mengacu Standar Kompetensi Kerja Nasional & Pedoman BNSP.</p>
+            <p class="text-slate-400">Data tersimpan otomatis di peramban (localStorage).</p>
+        </div>
+    </footer>
+
+    <script>
+        // =========================================================================
+        // 1. DATA KONSTANTA, PRESET & TEMPLATE KALIMAT PLOR (STANDAR BNSP)
+        // =========================================================================
+
+        const P_TEMPLATES = {
+            "VRFF - Valid": [
+                "Validitas prinsip asesmen pada perangkat uji belum dapat dipastikan,",
+                "Prinsip validitas dalam pengukuran kriteria unjuk kerja belum terpenuhi sepenuhnya,",
+                "Kesesuaian instrumen asesmen terhadap dimensi kompetensi (TS, TMS, CMS, JRES) belum valid,"
+            ],
+            "VRFF - Reliabel": [
+                "Reliabilitas dan konsistensi penilaian antar asesor belum dapat dijamin,",
+                "Prinsip reliabilitas pada instrumen asesmen belum memenuhi standar konsistensi,",
+                "Pedoman penskoran dan rubrik penilaian belum memberikan acuan yang reliabel,"
+            ],
+            "VRFF - Fleksibel": [
+                "Prinsip fleksibilitas dalam pelaksanaan asesmen belum terakomodasi dengan baik,",
+                "Fleksibilitas metode dan instruksi asesmen terhadap kondisi tempat kerja belum terpenuhi,",
+                "Perangkat asesmen belum mencerminkan prinsip fleksibilitas sesuai konteks asesi,"
+            ],
+            "VRFF - Fair": [
+                "Prinsip keadilan (fairness) bagi asesi belum sepenuhnya tercermin dalam perangkat asesmen,",
+                "Keadilan (fair) dalam penyampaian instruksi dan penyesuaian yang wajar belum dipastikan,",
+                "Perangkat asesmen berpotensi menimbulkan bias dan belum memenuhi prinsip fair,"
+            ],
+            "VATM - Valid": [
+                "Aturan bukti Valid pada pengumpulan portofolio/bukti pendukung belum terpenuhi,",
+                "Keterkaitan bukti yang dipersyaratkan dengan unit kompetensi belum memenuhi aturan Valid,"
+            ],
+            "VATM - Asli": [
+                "Aturan bukti Asli (authentic) dalam verifikasi bukti asesi belum dapat dipastikan,",
+                "Mekanisme pemastian keaslian bukti hasil kerja asesi belum memenuhi aturan bukti Asli,"
+            ],
+            "VATM - Terkini": [
+                "Aturan bukti Terkini (current) pada persyaratan bukti portofolio belum ditetapkan,",
+                "Kemutakhiran kompetensi asesi belum dapat diverifikasi sesuai aturan bukti Terkini,"
+            ],
+            "VATM - Memadai": [
+                "Aturan bukti Memadai (sufficient) untuk membuktikan seluruh KUK belum terpenuhi,",
+                "Kecukupan jumlah dan jenis bukti yang dipersyaratkan belum memenuhi aturan Memadai,"
+            ],
+            "Kesesuaian SKKNI / Skema": [
+                "Kesesuaian perangkat asesmen terhadap standar kompetensi (SKKNI) belum selaras,",
+                "Pemetaan unit kompetensi dan Kriteria Unjuk Kerja (KUK) pada perangkat belum sesuai standar,"
+            ],
+            "Kelengkapan Administrasi MUK": [
+                "Kelengkapan identitas dan struktur administrasi pada perangkat MUK belum lengkap,",
+                "Format penyajian instrumen asesmen belum sepenuhnya mengikuti pedoman penulisan MUK,"
+            ]
+        };
+
+        const PRESETS = {
+            "ia05_valid": {
+                pCat: "VRFF - Valid",
+                pText: "Validitas prinsip asesmen pada perangkat uji belum dapat dipastikan,",
+                lForm: "FR.IA.05 (Pertanyaan Tertulis Pilihan Ganda)",
+                lDetail: "nomor soal 4 dan 5",
+                oText: "opsi jawaban tidak mencantumkan pengecoh (distractor) yang logis serta tidak memuat kode dan judul unit kompetensi pada header soal.",
+                rSelect: "Pedoman Penyusunan Materi Uji Kompetensi (MUK) BNSP dan Skema Sertifikasi",
+                rDetail: "",
+                recText: "Lengkapi header tabel pada FR.IA.05 soal nomor 4 dan 5 dengan kode serta judul unit kompetensi yang sesuai, serta perbaiki opsi pengecoh agar setara secara teknis dan logis.",
+                pic: "Tim Penyusun MUK",
+                deadline: "Maksimal 7 hari kerja setelah sesi validasi"
+            },
+            "ia01_reliabel": {
+                pCat: "VRFF - Reliabel",
+                pText: "Reliabilitas dan konsistensi penilaian antar asesor belum dapat dijamin,",
+                lForm: "FR.IA.01 (Ceklis Observasi Aktivitas di Tempat Kerja)",
+                lDetail: "Unit Kompetensi ke-2 Elemen 1",
+                oText: "kolom tolok ukur (benchmark) hanya mencantumkan kalimat umum dan belum merinci Kriteria Unjuk Kerja (KUK) yang terukur sebagai panduan observasi.",
+                rSelect: "SKKNI terkait pada Kriteria Unjuk Kerja (KUK) dan Batasan Variabel",
+                rDetail: "",
+                recText: "Uraikan tolok ukur pada FR.IA.01 Unit Kompetensi ke-2 Elemen 1 secara spesifik sesuai redaksi Kriteria Unjuk Kerja (KUK) dan SOP tempat kerja agar konsisten dinilai oleh asesor berbeda.",
+                pic: "Tim Penyusun MUK",
+                deadline: "Maksimal 7 hari kerja setelah sesi validasi"
+            },
+            "ia02_fleksibel": {
+                pCat: "VRFF - Fleksibel",
+                pText: "Prinsip fleksibilitas dalam pelaksanaan asesmen belum terakomodasi dengan baik,",
+                lForm: "FR.IA.02 (Tugas Praktik Demonstrasi)",
+                lDetail: "bagian Skenario dan Daftar Peralatan",
+                oText: "instruksi kerja mengunci penggunaan satu merek perangkat lunak tertentu tanpa memberikan opsi perangkat lunak sejenis yang setara di TUK.",
+                rSelect: "Pedoman Penyusunan Materi Uji Kompetensi (MUK) BNSP dan Skema Sertifikasi",
+                rDetail: "",
+                recText: "Revisi skenario dan daftar peralatan pada FR.IA.02 dengan mencantumkan spesifikasi fungsional perangkat lunak atau alternatif aplikasi yang setara sesuai standar industri.",
+                pic: "Tim Penyusun MUK",
+                deadline: "Maksimal 7 hari kerja setelah sesi validasi"
+            },
+            "mapa02_fair": {
+                pCat: "VRFF - Fair",
+                pText: "Prinsip keadilan (fairness) bagi asesi belum sepenuhnya tercermin dalam perangkat asesmen,",
+                lForm: "FR.MAPA.02 (Peta Instrumen Asesmen Hasil Pendekatan Asesmen)",
+                lDetail: "matriks pemetaan kelompok asesi",
+                oText: "belum tersedia alternatif instrumen pendukung (seperti FR.IA.07 Pertanyaan Lisan) bagi asesi yang memiliki keterbatasan dalam pengisian tes tertulis.",
+                rSelect: "Peraturan BNSP Nomor 2/BNSP/VIII/2017 (PBNSP 201 / 210) tentang Pedoman Penilaian Kesesuaian",
+                rDetail: "",
+                recText: "Tambahkan pemetaan instrumen alternatif FR.IA.07 pada FR.MAPA.02 untuk mengakomodasi prinsip keadilan dan penyesuaian yang wajar (reasonable adjustment) bagi asesi.",
+                pic: "Manajer Sertifikasi LSP",
+                deadline: "Sebelum pelaksanaan uji kompetensi dimulai"
+            },
+            "ia08_terkini": {
+                pCat: "VATM - Terkini",
+                pText: "Aturan bukti Terkini (current) pada persyaratan bukti portofolio belum ditetapkan,",
+                lForm: "FR.IA.08 (Ceklis Verifikasi Portofolio)",
+                lDetail: "bagian Persyaratan Bukti Portofolio",
+                oText: "belum mencantumkan batas masa berlaku atau tahun penerbitan maksimal dokumen hasil kerja/sertifikat pelatihan yang dapat diterima sebagai bukti portofolio.",
+                rSelect: "SOP Pelaksanaan Asesmen dan Validasi MUK LSP",
+                rDetail: "",
+                recText: "Cantumkan ketentuan batas waktu kemutakhiran bukti portofolio (misalnya maksimal 2 tahun terakhir) secara eksplisit pada kolom persyaratan bukti di formulir FR.IA.08.",
+                pic: "Tim Penyusun MUK",
+                deadline: "Maksimal 7 hari kerja setelah sesi validasi"
+            },
+            "ia09_asli": {
+                pCat: "VATM - Asli",
+                pText: "Aturan bukti Asli (authentic) dalam verifikasi bukti asesi belum dapat dipastikan,",
+                lForm: "FR.IA.09 (Pertanyaan Wawancara)",
+                lDetail: "daftar pertanyaan konfirmasi portofolio",
+                oText: "daftar pertanyaan wawancara belum memuat pertanyaan kunci untuk menggali proses pengerjaan dan peran langsung asesi atas dokumen portofolio yang dilampirkan.",
+                rSelect: "Pedoman Penyusunan Materi Uji Kompetensi (MUK) BNSP dan Skema Sertifikasi",
+                rDetail: "",
+                recText: "Tambahkan butir pertanyaan verifikasi proses kerja pada FR.IA.09 untuk memastikan keaslian bukti portofolio yang diajukan oleh asesi.",
+                pic: "Tim Penyusun MUK",
+                deadline: "Maksimal 7 hari kerja setelah sesi validasi"
+            },
+            "apl02_standar": {
+                pCat: "Kesesuaian SKKNI / Skema",
+                pText: "Kesesuaian perangkat asesmen terhadap standar kompetensi (SKKNI) belum selaras,",
+                lForm: "FR.APL.02 (Asesmen Mandiri)",
+                lDetail: "Unit Kompetensi ke-3",
+                oText: "redaksi pertanyaan asesmen mandiri masih merujuk pada KUK SKKNI versi lama dan belum menyesuaikan dengan SKKNI terbaru yang tercantum dalam Skema Sertifikasi.",
+                rSelect: "SKKNI terkait pada Kriteria Unjuk Kerja (KUK) dan Batasan Variabel",
+                rDetail: "",
+                recText: "Sesuaikan seluruh butir pertanyaan asesmen mandiri pada FR.APL.02 Unit Kompetensi ke-3 dengan redaksi Elemen dan KUK pada SKKNI terbaru sesuai Skema Sertifikasi.",
+                pic: "Tim Penyusun MUK",
+                deadline: "Maksimal 3 hari kerja setelah sesi validasi"
+            }
+        };
+
+        // =========================================================================
+        // 2. STATE APLIKASI & LOCALSTORAGE
+        // =========================================================================
+
+        const STORAGE_KEY = 'frva_mkva_generator_v1';
+
+        let appState = {
+            meta: {
+                lsp: '',
+                skemaJudul: '',
+                skemaNomor: '',
+                tanggal: new Date().toISOString().split('T')[0],
+                tempat: '',
+                periode: 'Sebelum Asesmen',
+                tujuan: 'Bagian dari proses penjaminan mutu organisasi',
+                konteks: 'Internal Organisasi (LSP)',
+                pendekatan: 'Mengkaji perangkat asesmen bersama kolega asesor',
+                lead: '',
+                anggota: ''
+            },
+            findings: []
+        };
+
+        let editingId = null;
+
+        // =========================================================================
+        // 3. INISIALISASI & PERSISTENCE
+        // =========================================================================
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            populateMetaInputs();
+            onPCategoryChange();
+            updateLivePreview();
+            renderFindingsLists();
+            renderDocumentPreview();
+        });
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.meta) appState.meta = { ...appState.meta, ...parsed.meta };
+                    if (Array.isArray(parsed.findings)) appState.findings = parsed.findings;
+                }
+            } catch (e) {
+                console.error('Gagal memuat data dari localStorage:', e);
+            }
+        }
+
+        function persistState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.error('Gagal menyimpan data ke localStorage:', e);
+            }
+            updateCounters();
+        }
+
+        function updateCounters() {
+            const count = appState.findings.length;
+            document.getElementById('header-badge-count').textContent = count;
+            document.getElementById('tab-badge-count').textContent = count;
+            document.getElementById('side-list-count').textContent = count;
+        }
+
+        // =========================================================================
+        // 4. NAVIGASI TAB
+        // =========================================================================
+
+        function switchTab(tabName) {
+            const tabs = ['step1', 'step2', 'step3'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const badge = btn.querySelector('span:first-child');
+
+                if (t === tabName) {
+                    view.classList.remove('hidden');
+                    btn.classList.remove('border-transparent', 'text-slate-500', 'font-medium');
+                    btn.classList.add('border-navy-800', 'text-navy-900', 'font-semibold');
+                    badge.classList.remove('bg-slate-200', 'text-slate-700');
+                    badge.classList.add('bg-navy-800', 'text-white');
+                } else {
+                    view.classList.add('hidden');
+                    btn.classList.add('border-transparent', 'text-slate-500', 'font-medium');
+                    btn.classList.remove('border-navy-800', 'text-navy-900', 'font-semibold');
+                    badge.classList.add('bg-slate-200', 'text-slate-700');
+                    badge.classList.remove('bg-navy-800', 'text-white');
+                }
+            });
+
+            if (tabName === 'step3') {
+                renderDocumentPreview();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openPreviewTab() {
+            switchTab('step3');
+        }
+
+        // =========================================================================
+        // 5. LANGKAH 1: IDENTITAS & KONTEKS FR.VA
+        // =========================================================================
+
+        function populateMetaInputs() {
+            document.getElementById('meta-lsp').value = appState.meta.lsp || '';
+            document.getElementById('meta-skema-judul').value = appState.meta.skemaJudul || '';
+            document.getElementById('meta-skema-nomor').value = appState.meta.skemaNomor || '';
+            document.getElementById('meta-tanggal').value = appState.meta.tanggal || '';
+            document.getElementById('meta-tempat').value = appState.meta.tempat || '';
+            document.getElementById('meta-periode').value = appState.meta.periode || 'Sebelum Asesmen';
+            document.getElementById('meta-tujuan').value = appState.meta.tujuan || 'Bagian dari proses penjaminan mutu organisasi';
+            document.getElementById('meta-konteks').value = appState.meta.konteks || 'Internal Organisasi (LSP)';
+            document.getElementById('meta-pendekatan').value = appState.meta.pendekatan || 'Mengkaji perangkat asesmen bersama kolega asesor';
+            document.getElementById('meta-lead').value = appState.meta.lead || '';
+            document.getElementById('meta-anggota').value = appState.meta.anggota || '';
+        }
+
+        function saveMeta() {
+            appState.meta.lsp = document.getElementById('meta-lsp').value.trim();
+            appState.meta.skemaJudul = document.getElementById('meta-skema-judul').value.trim();
+            appState.meta.skemaNomor = document.getElementById('meta-skema-nomor').value.trim();
+            appState.meta.tanggal = document.getElementById('meta-tanggal').value;
+            appState.meta.tempat = document.getElementById('meta-tempat').value.trim();
+            appState.meta.periode = document.getElementById('meta-periode').value;
+            appState.meta.tujuan = document.getElementById('meta-tujuan').value;
+            appState.meta.konteks = document.getElementById('meta-konteks').value;
+            appState.meta.pendekatan = document.getElementById('meta-pendekatan').value;
+            appState.meta.lead = document.getElementById('meta-lead').value.trim();
+            appState.meta.anggota = document.getElementById('meta-anggota').value.trim();
+            persistState();
+            renderDocumentPreview();
+        }
+
+        function fillSampleHeader() {
+            appState.meta = {
+                lsp: 'LSP Teknologi Informasi & Komunikasi Nusantara',
+                skemaJudul: 'Okupasi Pemrogram Junior (Junior Coder)',
+                skemaNomor: 'SKM/0317/00010/2/2024/08',
+                tanggal: new Date().toISOString().split('T')[0],
+                tempat: 'Ruang Rapat Penjaminan Mutu LSP',
+                periode: 'Sebelum Asesmen',
+                tujuan: 'Bagian dari proses penjaminan mutu organisasi',
+                konteks: 'Internal Organisasi (LSP)',
+                pendekatan: 'Mengkaji perangkat asesmen bersama kolega asesor',
+                lead: 'Ir. Hendra Wijaya, M.Kom (MET.000.004512 2022)',
+                anggota: 'Rina Kusumawati, S.T. (Asesor), Dimas Pratama (Komite Skema)'
+            };
+            populateMetaInputs();
+            persistState();
+            renderDocumentPreview();
+            showToast('Contoh identitas skema & tim validasi berhasil dimuat.', 'success');
+        }
+
+        // =========================================================================
+        // 6. LANGKAH 2: GENERATOR PLOR & REKOMENDASI
+        // =========================================================================
+
+        function onPCategoryChange() {
+            const cat = document.getElementById('plor-p-category').value;
+            const tplSelect = document.getElementById('plor-p-template');
+            const templates = P_TEMPLATES[cat] || [];
+
+            tplSelect.innerHTML = '';
+            templates.forEach((tpl, idx) => {
+                const opt = document.createElement('option');
+                opt.value = tpl;
+                opt.textContent = tpl;
+                tplSelect.appendChild(opt);
+            });
+
+            if (templates.length > 0 && !editingId) {
+                document.getElementById('plor-p-text').value = templates[0];
+            }
+            updateLivePreview();
+        }
+
+        function applyPTemplate(val) {
+            if (val) {
+                document.getElementById('plor-p-text').value = val;
+                updateLivePreview();
+            }
+        }
+
+        function onLFormChange() {
+            const val = document.getElementById('plor-l-form').value;
+            const customWrap = document.getElementById('plor-l-custom-wrap');
+            if (val === 'CUSTOM') {
+                customWrap.classList.remove('hidden');
+            } else {
+                customWrap.classList.add('hidden');
+            }
+            updateLivePreview();
+        }
+
+        function onRSelectChange() {
+            updateLivePreview();
+        }
+
+        function appendObjectivePhrase(phrase) {
+            const textarea = document.getElementById('plor-o-text');
+            const current = textarea.value.trim();
+            if (!current) {
+                textarea.value = phrase + '.';
+            } else {
+                const cleaned = current.replace(/\.$/, '');
+                textarea.value = `${cleaned}, serta ${phrase}.`;
+            }
+            updateLivePreview();
+        }
+
+        function applyPreset(presetKey) {
+            if (!presetKey || !PRESETS[presetKey]) return;
+            const p = PRESETS[presetKey];
+
+            document.getElementById('plor-p-category').value = p.pCat;
+            onPCategoryChange();
+            document.getElementById('plor-p-text').value = p.pText;
+
+            const formSelect = document.getElementById('plor-l-form');
+            const exists = Array.from(formSelect.options).some(o => o.value === p.lForm);
+            if (exists) {
+                formSelect.value = p.lForm;
+                document.getElementById('plor-l-custom-wrap').classList.add('hidden');
+            } else {
+                formSelect.value = 'CUSTOM';
+                document.getElementById('plor-l-custom-wrap').classList.remove('hidden');
+                document.getElementById('plor-l-custom').value = p.lForm;
+            }
+            document.getElementById('plor-l-detail').value = p.lDetail;
+
+            document.getElementById('plor-o-text').value = p.oText;
+            document.getElementById('plor-r-select').value = p.rSelect;
+            document.getElementById('plor-r-detail').value = p.rDetail;
+            document.getElementById('rec-text').value = p.recText;
+            document.getElementById('rec-pic').value = p.pic;
+            document.getElementById('rec-deadline').value = p.deadline;
+
+            updateLivePreview();
+            showToast('Template kasus berhasil dimuat. Silakan sesuaikan jika perlu.', 'info');
+        }
+
+        function getFormValues() {
+            const pCat = document.getElementById('plor-p-category').value;
+            const pText = document.getElementById('plor-p-text').value.trim();
+
+            const lFormSelect = document.getElementById('plor-l-form').value;
+            const lForm = lFormSelect === 'CUSTOM'
+                ? (document.getElementById('plor-l-custom').value.trim() || 'Dokumen MUK')
+                : lFormSelect;
+            const lDetail = document.getElementById('plor-l-detail').value.trim();
+
+            const oText = document.getElementById('plor-o-text').value.trim();
+
+            const rSelect = document.getElementById('plor-r-select').value;
+            const rDetail = document.getElementById('plor-r-detail').value.trim();
+
+            const recText = document.getElementById('rec-text').value.trim();
+            const pic = document.getElementById('rec-pic').value;
+            const deadline = document.getElementById('rec-deadline').value;
+
+            return { pCat, pText, lForm, lDetail, oText, rSelect, rDetail, recText, pic, deadline };
+        }
+
+        function buildPlorSentences(v) {
+            // Normalisasi P
+            let pClean = v.pText;
+            if (pClean && !pClean.endsWith(',')) {
+                pClean = pClean.replace(/\.$/, '') + ',';
+            }
+
+            // Normalisasi L
+            let lPhrase = '';
+            if (v.lForm) {
+                lPhrase = `terbukti pada formulir ${v.lForm}`;
+                if (v.lDetail) {
+                    lPhrase += ` bagian ${v.lDetail}`;
+                }
+                lPhrase += ',';
+            }
+
+            // Normalisasi O
+            let oClean = v.oText;
+            if (oClean) {
+                oClean = oClean.charAt(0).toLowerCase() + oClean.slice(1);
+                if (!oClean.endsWith('.')) oClean += '.';
+            }
+
+            // Normalisasi R
+            let rPhrase = '';
+            if (v.rSelect) {
+                rPhrase = `Hal ini tidak sesuai dengan ${v.rSelect}`;
+                if (v.rDetail) {
+                    rPhrase += ` (${v.rDetail})`;
+                }
+                rPhrase += '.';
+            }
+
+            const fullText = [pClean, lPhrase, oClean, rPhrase].filter(Boolean).join(' ');
+            return { pClean, lPhrase, oClean, rPhrase, fullText };
+        }
+
+        function autoGenerateRecommendation() {
+            const v = getFormValues();
+            const shortForm = v.lForm.split(' ')[0] || 'perangkat asesmen';
+            const locPart = v.lDetail ? `${shortForm} (${v.lDetail})` : shortForm;
+
+            let actionVerb = 'Lakukan peninjauan dan perbaikan pada';
+            const oLower = v.oText.toLowerCase();
+
+            if (oLower.includes('tidak mencantumkan') || oLower.includes('belum mencantumkan') || oLower.includes('tidak memuat') || oLower.includes('belum tersedia')) {
+                actionVerb = 'Lengkapi dan cantumkan komponen yang dipersyaratkan pada';
+            } else if (oLower.includes('belum sesuai') || oLower.includes('versi lama') || oLower.includes('tidak selaras')) {
+                actionVerb = 'Revisi dan selaraskan muatan materi pada';
+            } else if (oLower.includes('pengecoh') || oLower.includes('opsi jawaban')) {
+                actionVerb = 'Perbaiki opsi pengecoh (distractor) dan lengkapi identitas unit kompetensi pada';
+            } else if (oLower.includes('kuk') || oLower.includes('kriteria unjuk kerja')) {
+                actionVerb = 'Uraikan Kriteria Unjuk Kerja (KUK) secara spesifik dan terukur pada';
+            }
+
+            let rec = `${actionVerb} ${locPart}`;
+            if (v.oText) {
+                const cleanIssue = v.oText.replace(/\.$/, '').replace(/^(bahwa\s+)/i, '');
+                rec += ` terkait temuan bahwa ${cleanIssue}`;
+            }
+            rec += `, agar memenuhi ${v.pCat} serta selaras dengan ${v.rSelect}.`;
+
+            document.getElementById('rec-text').value = rec;
+            updateLivePreview();
+            showToast('Kalimat rekomendasi perintah aktif berhasil dibuat otomatis.', 'success');
+        }
+
+        function updateLivePreview() {
+            const v = getFormValues();
+            const plor = buildPlorSentences(v);
+
+            // Update Badges
+            document.getElementById('preview-badge-cat').textContent = v.pCat;
+            const shortForm = v.lForm.split(' ')[0] || 'Formulir';
+            document.getElementById('preview-badge-form').textContent = v.lDetail ? `${shortForm} • ${v.lDetail}` : shortForm;
+
+            // Update Paragraf PLOR dengan highlight warna halus
+            const paraEl = document.getElementById('live-plor-paragraph');
+            if (!plor.pClean && !plor.oClean) {
+                paraEl.innerHTML = `<span class="text-slate-400 italic">Lengkapi kolom P, L, O, dan R di sebelah kiri untuk melihat hasil penggabungan kalimat temuan validasi secara otomatis...</span>`;
+            } else {
+                const pHtml = plor.pClean ? `<span class="bg-rose-100/70 text-rose-950 px-1 rounded font-medium">${escapeHtml(plor.pClean)}</span> ` : '';
+                const lHtml = plor.lPhrase ? `<span class="bg-amber-100/70 text-amber-950 px-1 rounded font-medium">${escapeHtml(plor.lPhrase)}</span> ` : '';
+                const oHtml = plor.oClean ? `<span class="bg-sky-100/70 text-sky-950 px-1 rounded">${escapeHtml(plor.oClean)}</span> ` : '';
+                const rHtml = plor.rPhrase ? `<span class="bg-emerald-100/70 text-emerald-950 px-1 rounded font-medium">${escapeHtml(plor.rPhrase)}</span>` : '';
+                paraEl.innerHTML = `${pHtml}${lHtml}${oHtml}${rHtml}`;
+            }
+
+            // Update Pratinjau Rekomendasi
+            const recEl = document.getElementById('live-rec-paragraph');
+            if (v.recText) {
+                recEl.innerHTML = `<span class="text-slate-800 font-medium">${escapeHtml(v.recText)}</span>`;
+            } else {
+                recEl.innerHTML = `<span class="text-slate-400 italic">Klik tombol "Auto-Saran Rekomendasi" atau ketik kalimat perintah aktif...</span>`;
+            }
+
+            document.getElementById('live-rec-pic').textContent = v.pic;
+            document.getElementById('live-rec-deadline').textContent = v.deadline;
+        }
+
+        // =========================================================================
+        // 7. CRUD TEMUAN VALIDASI
+        // =========================================================================
+
+        function saveFinding() {
+            const v = getFormValues();
+
+            if (!v.pText) {
+                showToast('Komponen P (Problem) wajib diisi.', 'error');
+                document.getElementById('plor-p-text').focus();
+                return;
+            }
+            if (!v.oText) {
+                showToast('Komponen O (Objective / Bukti Nyata) wajib diisi.', 'error');
+                document.getElementById('plor-o-text').focus();
+                return;
+            }
+            if (!v.recText) {
+                autoGenerateRecommendation();
+                v.recText = document.getElementById('rec-text').value.trim();
+            }
+
+            const plor = buildPlorSentences(v);
+
+            const findingObj = {
+                id: editingId || ('f_' + Date.now()),
+                pCat: v.pCat,
+                pText: v.pText,
+                lForm: v.lForm,
+                lDetail: v.lDetail,
+                oText: v.oText,
+                rSelect: v.rSelect,
+                rDetail: v.rDetail,
+                fullPlor: plor.fullText,
+                recText: v.recText,
+                pic: v.pic,
+                deadline: v.deadline
+            };
+
+            if (editingId) {
+                const idx = appState.findings.findIndex(item => item.id === editingId);
+                if (idx !== -1) {
+                    appState.findings[idx] = findingObj;
+                }
+                showToast('Temuan validasi berhasil diperbarui.', 'success');
+                cancelEdit(false);
+            } else {
+                appState.findings.push(findingObj);
+                showToast('Temuan validasi ditambahkan ke daftar FR.VA.', 'success');
+                clearCurrentForm();
+            }
+
+            persistState();
+            renderFindingsLists();
+            renderDocumentPreview();
+        }
+
+        function editFinding(id) {
+            const item = appState.findings.find(f => f.id === id);
+            if (!item) return;
+
+            editingId = id;
+            switchTab('step2');
+
+            document.getElementById('editing-badge').classList.remove('hidden');
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+            document.getElementById('btn-save-text').textContent = 'Simpan Perubahan Temuan';
+
+            document.getElementById('plor-p-category').value = item.pCat;
+            onPCategoryChange();
+            document.getElementById('plor-p-text').value = item.pText;
+
+            const formSelect = document.getElementById('plor-l-form');
+            const exists = Array.from(formSelect.options).some(o => o.value === item.lForm);
+            if (exists) {
+                formSelect.value = item.lForm;
+                document.getElementById('plor-l-custom-wrap').classList.add('hidden');
+            } else {
+                formSelect.value = 'CUSTOM';
+                document.getElementById('plor-l-custom-wrap').classList.remove('hidden');
+                document.getElementById('plor-l-custom').value = item.lForm;
+            }
+            document.getElementById('plor-l-detail').value = item.lDetail || '';
+
+            document.getElementById('plor-o-text').value = item.oText;
+            document.getElementById('plor-r-select').value = item.rSelect;
+            document.getElementById('plor-r-detail').value = item.rDetail || '';
+            document.getElementById('rec-text').value = item.recText;
+            document.getElementById('rec-pic').value = item.pic;
+            document.getElementById('rec-deadline').value = item.deadline;
+
+            updateLivePreview();
+            showToast('Mode edit aktif. Ubah data lalu klik Simpan Perubahan.', 'info');
+        }
+
+        function cancelEdit(notify = true) {
+            editingId = null;
+            document.getElementById('editing-badge').classList.add('hidden');
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            document.getElementById('btn-save-text').textContent = 'Tambahkan ke Daftar Temuan FR.VA';
+            clearCurrentForm();
+            if (notify) showToast('Mode edit dibatalkan.', 'info');
+        }
+
+        function deleteFinding(id) {
+            openConfirmModal(
+                'Hapus Temuan Validasi?',
+                'Temuan yang dipilih akan dihapus dari tabel laporan FR.VA.',
+                () => {
+                    appState.findings = appState.findings.filter(f => f.id !== id);
+                    if (editingId === id) cancelEdit(false);
+                    persistState();
+                    renderFindingsLists();
+                    renderDocumentPreview();
+                    showToast('Temuan berhasil dihapus.', 'success');
+                }
+            );
+        }
+
+        function clearCurrentForm() {
+            document.getElementById('preset-selector').value = '';
+            document.getElementById('plor-l-detail').value = '';
+            document.getElementById('plor-o-text').value = '';
+            document.getElementById('plor-r-detail').value = '';
+            document.getElementById('rec-text').value = '';
+            onPCategoryChange();
+            updateLivePreview();
+        }
+
+        function renderFindingsLists() {
+            updateCounters();
+            const container = document.getElementById('side-findings-list');
+
+            if (appState.findings.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-xs sm:text-sm text-slate-400">
+                        Belum ada temuan yang ditambahkan ke daftar.<br>Gunakan form di samping untuk menyusun temuan PLOR.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = appState.findings.map((item, idx) => {
+                const shortForm = item.lForm.split(' ')[0];
+                return `
+                    <div class="p-4 hover:bg-slate-50 transition group">
+                        <div class="flex items-start justify-between gap-2 mb-1.5">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="px-2 py-0.5 text-[11px] font-bold bg-navy-800 text-white rounded">#${idx + 1}</span>
+                                <span class="px-2 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-900 rounded">${escapeHtml(shortForm)}</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium bg-slate-100 text-slate-700 rounded">${escapeHtml(item.pCat)}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="copySingleItem('${item.id}')" title="Salin teks PLOR & Rekomendasi" class="p-1.5 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                </button>
+                                <button onclick="editFinding('${item.id}')" title="Edit temuan" class="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </button>
+                                <button onclick="deleteFinding('${item.id}')" title="Hapus temuan" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-700 line-clamp-3 leading-relaxed">${escapeHtml(item.fullPlor)}</p>
+                        <p class="text-[11px] text-emerald-700 font-medium mt-1.5 line-clamp-2">&rarr; ${escapeHtml(item.recText)}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // 8. PRATINJAU DOKUMEN RESMI FR.VA (TAB 3)
+        // =========================================================================
+
+        function renderDocumentPreview() {
+            const m = appState.meta;
+
+            document.getElementById('doc-lsp-name').textContent = m.lsp ? m.lsp.toUpperCase() : 'LEMBAGA SERTIFIKASI PROFESI (LSP)';
+            document.getElementById('doc-skema-judul').textContent = m.skemaJudul || '(Belum diisi)';
+            document.getElementById('doc-skema-nomor').textContent = m.skemaNomor || '(Belum diisi)';
+
+            // Format Tanggal Indonesia
+            let formattedDate = '-';
+            if (m.tanggal) {
+                try {
+                    const d = new Date(m.tanggal + 'T00:00:00');
+                    formattedDate = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                } catch (e) {
+                    formattedDate = m.tanggal;
+                }
+            }
+            document.getElementById('doc-tanggal').textContent = formattedDate;
+            document.getElementById('doc-tempat').textContent = m.tempat || '-';
+            document.getElementById('doc-tujuan').textContent = m.tujuan || '-';
+            document.getElementById('doc-konteks').textContent = m.konteks || '-';
+            document.getElementById('doc-pendekatan').textContent = m.pendekatan || '-';
+
+            // Checkbox Periode
+            const p1 = m.periode === 'Sebelum Asesmen' ? '✓' : ' ';
+            const p2 = m.periode === 'Pada Saat Asesmen' ? '✓' : ' ';
+            const p3 = m.periode === 'Setelah Asesmen' ? '✓' : ' ';
+            document.getElementById('doc-periode').innerHTML = `
+                <span class="font-mono">[ ${p1} ]</span> Sebelum Asesmen &nbsp;&nbsp;&nbsp;
+                <span class="font-mono">[ ${p2} ]</span> Pada Saat Asesmen &nbsp;&nbsp;&nbsp;
+                <span class="font-mono">[ ${p3} ]</span> Setelah Asesmen
+            `;
+
+            // Tabel Temuan
+            const tbody = document.getElementById('doc-findings-tbody');
+            if (appState.findings.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="border border-slate-800 p-6 text-center text-slate-500 italic">
+                            Belum ada temuan validasi yang dicatat. Silakan tambahkan temuan pada Tab "Generator Temuan PLOR".
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = appState.findings.map((item, idx) => `
+                    <tr class="align-top">
+                        <td class="border border-slate-800 p-2.5 text-center font-bold">${idx + 1}</td>
+                        <td class="border border-slate-800 p-2.5 text-xs">
+                            <span class="font-bold block text-slate-900">${escapeHtml(item.pCat)}</span>
+                            <span class="text-slate-600 mt-1 block">${escapeHtml(item.lForm.split(' ')[0])}</span>
+                        </td>
+                        <td class="border border-slate-800 p-2.5 leading-relaxed">${escapeHtml(item.fullPlor)}</td>
+                        <td class="border border-slate-800 p-2.5 leading-relaxed">${escapeHtml(item.recText)}</td>
+                        <td class="border border-slate-800 p-2.5 text-xs">
+                            <div class="font-bold text-slate-900">${escapeHtml(item.pic)}</div>
+                            <div class="text-slate-600 mt-1">${escapeHtml(item.deadline)}</div>
+                        </td>
+                        <td class="border border-slate-800 p-2 text-center no-print">
+                            <div class="flex flex-col gap-1">
+                                <button onclick="editFinding('${item.id}')" class="px-2 py-1 text-[11px] font-semibold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded">Edit</button>
+                                <button onclick="deleteFinding('${item.id}')" class="px-2 py-1 text-[11px] font-semibold bg-rose-100 hover:bg-rose-200 text-rose-900 rounded">Hapus</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Tabel Tim Validasi (Pengesahan)
+            const valTbody = document.getElementById('doc-validators-tbody');
+            let rows = `
+                <tr>
+                    <td class="border border-slate-800 p-3 text-center">1</td>
+                    <td class="border border-slate-800 p-3 font-semibold">${escapeHtml(m.lead || '..................................................')}</td>
+                    <td class="border border-slate-800 p-3">Lead Validator / Ketua Tim</td>
+                    <td class="border border-slate-800 p-3 h-14"></td>
+                </tr>
+            `;
+
+            if (m.anggota) {
+                const members = m.anggota.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+                members.forEach((member, i) => {
+                    rows += `
+                        <tr>
+                            <td class="border border-slate-800 p-3 text-center">${i + 2}</td>
+                            <td class="border border-slate-800 p-3 font-semibold">${escapeHtml(member)}</td>
+                            <td class="border border-slate-800 p-3">Anggota Tim Validasi</td>
+                            <td class="border border-slate-800 p-3 h-14"></td>
+                        </tr>
+                    `;
+                });
+            } else {
+                rows += `
+                    <tr>
+                        <td class="border border-slate-800 p-3 text-center">2</td>
+                        <td class="border border-slate-800 p-3 text-slate-400">..................................................</td>
+                        <td class="border border-slate-800 p-3">Anggota Tim Validasi</td>
+                        <td class="border border-slate-800 p-3 h-14"></td>
+                    </tr>
+                `;
+            }
+            valTbody.innerHTML = rows;
+        }
+
+        // =========================================================================
+        // 9. FITUR SALIN KE CLIPBOARD (KOMPATIBEL IFRAME) & RESET
+        // =========================================================================
+
+        function copyTextToClipboard(text, successMsg) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(successMsg || 'Teks berhasil disalin ke clipboard.', 'success');
+            } catch (err) {
+                showToast('Gagal menyalin teks otomatis. Silakan salin secara manual.', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function copyLivePlor() {
+            const v = getFormValues();
+            const plor = buildPlorSentences(v);
+            if (!plor.fullText) {
+                showToast('Belum ada kalimat PLOR untuk disalin.', 'error');
+                return;
+            }
+            let output = `TEMUAN VALIDASI (${v.pCat}):\n${plor.fullText}`;
+            if (v.recText) {
+                output += `\n\nREKOMENDASI PERBAIKAN:\n${v.recText}\n(PIC: ${v.pic} | Target: ${v.deadline})`;
+            }
+            copyTextToClipboard(output, 'Kalimat PLOR & Rekomendasi berhasil disalin!');
+        }
+
+        function copySingleItem(id) {
+            const item = appState.findings.find(f => f.id === id);
+            if (!item) return;
+            const text = `Temuan Validasi (${item.pCat}):\n${item.fullPlor}\n\nRekomendasi Perbaikan:\n${item.recText}\nPenanggung Jawab: ${item.pic} (${item.deadline})`;
+            copyTextToClipboard(text, 'Item temuan berhasil disalin!');
+        }
+
+        function copyAllTableText() {
+            if (appState.findings.length === 0) {
+                showToast('Daftar temuan masih kosong.', 'error');
+                return;
+            }
+
+            const m = appState.meta;
+            let lines = [];
+            lines.push(`LAPORAN HASIL VALIDASI ASESMEN (FR.VA - MKVA)`);
+            if (m.lsp) lines.push(`LSP: ${m.lsp}`);
+            if (m.skemaJudul) lines.push(`Skema Sertifikasi: ${m.skemaJudul} (${m.skemaNomor || '-'})`);
+            lines.push(`Periode Validasi: ${m.periode}`);
+            lines.push(`----------------------------------------------------------------------`);
+            lines.push(`No.\tAspek\tTemuan Validasi (PLOR)\tRekomendasi Perbaikan\tPenanggung Jawab & Tenggat Waktu`);
+
+            appState.findings.forEach((item, idx) => {
+                lines.push(`${idx + 1}\t${item.pCat}\t${item.fullPlor}\t${item.recText}\t${item.pic} (${item.deadline})`);
+            });
+
+            copyTextToClipboard(lines.join('\n'), 'Seluruh tabel FR.VA berhasil disalin (siap tempel ke Word/Excel)!');
+        }
+
+        function confirmResetAll() {
+            openConfirmModal(
+                'Reset Semua Data?',
+                'Seluruh identitas skema dan daftar temuan validasi yang tersimpan akan dihapus permanen.',
+                () => {
+                    localStorage.removeItem(STORAGE_KEY);
+                    appState = {
+                        meta: {
+                            lsp: '',
+                            skemaJudul: '',
+                            skemaNomor: '',
+                            tanggal: new Date().toISOString().split('T')[0],
+                            tempat: '',
+                            periode: 'Sebelum Asesmen',
+                            tujuan: 'Bagian dari proses penjaminan mutu organisasi',
+                            konteks: 'Internal Organisasi (LSP)',
+                            pendekatan: 'Mengkaji perangkat asesmen bersama kolega asesor',
+                            lead: '',
+                            anggota: ''
+                        },
+                        findings: []
+                    };
+                    editingId = null;
+                    populateMetaInputs();
+                    clearCurrentForm();
+                    renderFindingsLists();
+                    renderDocumentPreview();
+                    showToast('Seluruh data berhasil direset.', 'success');
+                }
+            );
+        }
+
+        // =========================================================================
+        // 10. UI HELPERS (TOAST, MODAL, ESCAPE HTML)
+        // =========================================================================
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const colors = {
+                success: 'bg-emerald-800 text-white border-emerald-700',
+                error: 'bg-rose-800 text-white border-rose-700',
+                info: 'bg-navy-900 text-white border-navy-700'
+            };
+
+            toast.className = `px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-medium flex items-center gap-2.5 transform transition-all duration-300 translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        function openConfirmModal(title, message, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+
+            const confirmBtn = document.getElementById('modal-confirm');
+            const cancelBtn = document.getElementById('modal-cancel');
+
+            const close = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            confirmBtn.onclick = () => {
+                close();
+                if (typeof onConfirm === 'function') onConfirm();
+            };
+            cancelBtn.onclick = close;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    </script>
+</body>
+</html>
